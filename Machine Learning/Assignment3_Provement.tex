@@ -1,0 +1,21 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{mathtools}
+\usepackage{amsmath,amssymb}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{bm}
+\geometry{left=3.0cm,right=3.0cm,top=2.0cm,bottom=2.0cm}
+
+\begin{document}
+	\noindent 证明：
+	\par $$l(\beta) = \sum\limits_{i=1}^{n}(-y_{i} \beta^{T}\bm{x_{i}} + \log(1+e^{\beta ^{T}\bm{x_{i}}})) $$
+	\par $$\dfrac{\partial l}{\partial \beta} = \sum\limits_{i=1}^{n}(-\bm{x_{i}}y_{i}+ \dfrac{\bm{x_{i}}e^{\beta ^{T}\bm{x_{i}}}}{1+e^{\beta ^{T}\bm{x_{i}}}}) =-X^{T}y + X^{T} \mu=X^{T}(\mu -y)$$
+	\par $$ \dfrac{\partial ^{2} l}{\partial \beta^{2}} = \dfrac{\partial (X^{T}(\mu - y))}{\partial \beta} =\dfrac{\sum\limits_{i=1}^{n} \dfrac{\bm{x_{i}}}{1+e^{-\beta ^{T}\bm{x_{i}}}}}{\partial \beta} = \sum\limits_{i=1}^{n}\bm{x_{i}}\dfrac{e^{-\beta^{T}\bm{x_{i}}}\bm{x_{i}}}{(1+e^{-\beta ^{T}\bm{x_{i}}})^{2}} = X^{T}SX$$
+	\par \noindent 其中，
+	\par $$X = (\bm{x_{1}},\dots,\bm{x_{n}})^{T} $$
+	\par $$y = (y_{1}, \dots , y_{n})^{T}   $$
+	\par $$\mu = (\mu_{1},\dots,\mu_{n})^{T}  $$ 
+	\par $$ S=\bm{diag}(\mu_{1}(1-\mu_{1}),\dots,\mu_{n}(1-\mu_{n}) ) $$
+	\par $$\mu_{i} = \dfrac{1}{1+e^{-\beta ^{T}\bm{x_{i}}}} ,(i=1,\dots,n)$$
+\end{document}

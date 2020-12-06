@@ -1,0 +1,170 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{mathtools}
+\usepackage{amsmath,amssymb}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{bm}
+\usepackage{extarrows}
+\geometry{left=3.0cm,right=3.0cm,top=2.0cm,bottom=2.0cm}
+
+\title{机器学习第四次作业}
+\author{大数据81 吴志超 2183311147}
+\begin{document}
+\begin{spacing}{1.3}
+\section*{11.02作业}
+\subsubsection*{1. 推导三硬币模型的 EM 算法中隐变量后验分布的计算公式以及参数更新公式}
+\par \noindent (1)变量说明：
+\par 观测变量X：一次实验观测到的结果，正面向上记为1，反面向上记为0;
+$$X=(x_{1},\dots,x_{n} \in \{0,1\})$$ 
+\par 隐变量Z：一次实验中，未观测到的硬币A的抛掷结果，正面向上记为1，反面向上记为0;
+$$Z=(z_{1},\dots,z_{n}) \in \{0,1\} $$
+\par 模型参数：$\theta=(\pi,p,q)$，分别代表硬币A、B、C抛掷得到正面向上的概率;
+\\
+\par 根据模型，在一次实验中：
+$$P(x\ |\ \theta) = \sum\limits_{z} P(x,z\ |\ \theta) = \sum\limits_{z} P(z\ |\ \theta)·P(x\ |\ z,\theta) $$
+\par 模型参数的极大似然估计为：
+\begin{equation}
+    \begin{split}
+        L &= \prod\limits_{i=1}^{n} \ P(x_{i} \ | \ \theta) \\
+        \log \ L &=\sum\limits_{i=1}^{n} \log P(x_{i} \ | \ \theta) \\
+        &=\sum\limits_{i=1}^{n} \log \biggl(\pi p^{x_{i}}(1-p)^{1-x_{i}}+(1-\pi)q^{x_{i}}(1-q)^{1-x_{i}} \biggl) 
+    \nonumber
+    \end{split}
+\end{equation}
+\par 由于上式的log中出现求和形式，不便于求解，因此引入Jessen不等式：
+$$E(f(x)) \ge f(E(x)) $$
+\par 同时，假设隐变量的分布为Q(z)，满足：
+$$Q(z)\ge 0 \ , \ \sum\limits_{z} Q(z) =1$$
+\par 因此，极大似然函数可以写作：
+\begin{equation}
+    \begin{split}
+        LL = \log \ L &=\sum\limits_{i=1}^{n}\log \sum\limits_{z_{i}}Q(z_{i})
+        \biggl(\dfrac{P(x_{i},z_{i}\ | \ \theta)}{Q(z_{i})} \biggr)  \\
+        &\ge \sum\limits_{i=1}^{n}\sum\limits_{z_{i}}Q(z_{i}) 
+        \log \biggl(\dfrac{P(x_{i},z_{i}\ | \ \theta)}{Q(z_{i})} \biggr) \\ 
+        &=J(\theta,Q(z))  \nonumber
+    \end{split}
+\end{equation}
+\par 这里，我们将$\biggl(\dfrac{P(x_{i},z_{i}\ | \ \theta)}{Q(z_{i})} \biggr)$看作是一个随机
+变量，因此$\sum\limits_{z_{i}}Q(z_{i})\biggl(\dfrac{P(x_{i},z_{i}\ | \ \theta)}{Q(z_{i})} \biggr) $
+可以看作是期望，根据Jessen不等式，上述不等式关系成立。为了取到极大似然函数的最大值，我们可以通过不断提高它的下界(使用EM算法)来实现。
+\par 对于EM算法，在E步，我们需要实现：
+$$Q^{t}(z) = \arg\max\limits_{Q(z)}\ J(\theta^{(t)},Q(z)) $$
+\par 为了让下界取到最大值，我们希望上述不等式关系的能成为等式关系，
+在Jessen不等式中，不等式当且仅当变量X为常量时取到等号，因此，我们令：
+$$ \dfrac{P(x_{i},z_{i}\ | \ \theta)}{Q(z_{i})} = const = C$$
+$$Q(z_{i})=\dfrac{P(x_{i},z_{i}\ | \ \theta)}{C} $$
+\par 根据隐变量分布的性质，有：
+$$\sum\limits_{z_{i}} Q(z_{i}) = \sum\limits_{z_{i}} \dfrac{P(x_{i},z_{i}\ | \ \theta)}{C} = 1$$
+$$C = \sum\limits_{z_{i}} P(x_{i},z_{i}\ | \ \theta) $$ 
+\par 因此，$Q(z_{i})$可写作：
+\begin{equation}
+    \begin{split}
+        Q(z_{i}) & = \dfrac{P(x_{i},z_{i}\ | \ \theta^{(t)})}{\sum\limits_{z_{i}}P(x_{i},z_{i}\ | \ \theta^{(t)})} 
+         = \dfrac{P(x_{i},z_{i}\ | \ \theta^{(t)})}{P(x_{i} \ | \ \theta^{(t)})} \\
+        &=P(z_{i} \ | \ x_{i},\theta^{(t)}) = \dfrac{P(x_{i}\ | \ z_{i},\theta^{(t)})·P(z_{i}\ | \ \theta^{(t)})}{P(x_{i} \ | \ \theta^{(t)})} \\
+        & = \dfrac{  \biggl( \pi p^{x_{i}}(1-p)^{1-x_{i}} \biggr)^{z_{i}} ·
+        \biggl( (1-\pi)q^{x_{i}}(1-q)^{1-x_{i}} \biggr)^{1-z_{i}}  }
+        {\pi p^{x_{i}}(1-p)^{1-x_{i}}+(1-\pi)q^{x_{i}}(1-q)^{1-x_{i}}} \nonumber 
+    \end{split}
+\end{equation}
+\par 在M步，$Q^{(t)}(z_{i})$为常数，因此有：
+\begin{equation}
+    \begin{split}
+        \theta^{(t+1)} &= \arg\max\limits_{\theta} \ J(\theta,Q^{t}(z)) \\
+        & =  \arg\max\limits_{\theta} \ \sum\limits_{i=1}^{n} \sum\limits_{z_{i}}   Q^{(t)}(z_{i}) \log \ P(x_{i},z_{i} \ | \theta) \\
+        & =  \arg\max\limits_{\theta} \ \sum\limits_{i=1}^{n} \sum\limits_{z_{i}}   Q^{(t)}(z_{i}) \log \ P(x_{i} \ | z_{i},\theta)·P(z_{i}\ | \ \theta) \\
+        & =  \arg\max\limits_{\pi,p,q} \ \sum\limits_{i=1}^{n} \sum\limits_{z_{i}} Q^{(t)}(z_{i})    
+        *\biggl(z_{i} \log (\pi p^{x_{i}}(1-p)^{1-x_{i}}) + 
+        (1-z_{i})\log ((1-\pi)q^{x_{i}}(1-q)^{1-x_{i}}) \biggr) \\
+        &=
+        \arg\max\limits_{\pi,p,q} \ \sum\limits_{i=1}^{n} \biggl(
+        \gamma_{i,0} \log \pi p^{x_{i}}(1-p)^{1-x_{i}}  + \gamma_{i,1} \log (1-\pi)q^{x_{i}}(1-q)^{1-x_{i}}   \biggr) 
+        \nonumber
+    \end{split}
+\end{equation}
+\par 其中，$\gamma_{i,0}=Q^{(t)}(z_{i}=0) , \gamma_{i,1}=Q^{(t)}(z_{i}=1)$
+\par 求导得：
+$$\dfrac{\partial J}{\partial \pi^{t}} = -\sum\limits_{i=1}^{n}\gamma_{i,0}\dfrac{1}{1-\pi^{t}} 
++ \sum\limits_{i=1}^{n}\gamma_{i,1}\dfrac{1}{\pi_{t}}$$
+$$\dfrac{\partial J}{\partial q^{t}} =
+\sum\limits_{i=1}^{n}\gamma_{i,0}\dfrac{x_{i}}{q^{t}}-\sum\limits_{i=1}^{n}\gamma_{i,0}\dfrac{1-x_{i}}{1-q^{t}} $$
+$$\dfrac{\partial J}{\partial p^{t}} =
+\sum\limits_{i=1}^{n}\gamma_{i,1} \dfrac{x_{i}}{p^{t}} - \sum\limits_{i=1}^{n}\gamma_{i,1}\dfrac{1-x_{i}}{1-p^{t}} $$
+\par 推导如下：
+\par 对于$\pi^{t}$
+$$\sum\limits_{i=1}^{n}\gamma_{i,0}\dfrac{1}{1-\pi^{t}} =\sum\limits_{i=1}^{n}\gamma_{i,1}\dfrac{1}{\pi_{t}}$$
+$$\sum\limits_{i=1}^{n}\gamma_{i,0} = \sum\limits_{i=1}^{n}\gamma_{i,1}(\dfrac{1}{\pi^{t}}-1) $$
+$$N = \sum\limits_{i=1}^{n}(\gamma_{i,0}+\gamma_{i,1}) = \sum\limits_{i=1}^{n}\gamma_{i,1}\dfrac{1}{\pi^{t}} $$
+$$\pi^{t} = \dfrac{1}{n} \sum\limits_{i=1}^{N}\gamma_{i,1}$$
+\par 对于$q^{t}$
+$$\sum\limits_{i=1}^{n}\gamma_{i,0} \dfrac{x_{i}}{q^{t}} = \sum\limits_{i=1}^{n}\gamma_{i,0} \dfrac{1-x_{i}}{1-q^{t}} $$
+$$(\dfrac{1}{q^{t}}-1) = \dfrac{\sum\limits_{i=1}^{n}\gamma_{i,0}x_{i}}{\sum\limits_{i=1}^{n}\gamma_{i,0}(1-x_{i})} $$
+$$q^{t} = \dfrac{1}{1+\dfrac{\sum\limits_{i=1}^{n}\gamma_{i,0}x_{i}}{\sum\limits_{i=1}^{n}\gamma_{i,0}(1-x_{i})}}
+= \dfrac{\sum\limits_{i=1}^{n}\gamma_{i,0}(1-x_{i})} {\sum\limits_{i=1}^{n}\gamma_{i,0}(1-x_{i})+\sum\limits_{i=1}^{n}\gamma_{i,0}x_{i}}
+= \dfrac{\sum\limits_{i=1}^{n}\gamma_{i,0}(1-x_{i})}{\sum\limits_{i=1}^{n}\gamma_{i,0}}$$
+\par 对于$p^{t}$，同$q^{t}$推导过程，可得
+$$p^{t} = \dfrac{1}{1+\dfrac{\sum\limits_{i=1}^{n}\gamma_{i,1}x_{i}}{\sum\limits_{i=1}^{n}\gamma_{i,1}(1-x_{i})}}
+= \dfrac{\sum\limits_{i=1}^{n}\gamma_{i,1}(1-x_{i})} {\sum\limits_{i=1}^{n}\gamma_{i,1}(1-x_{i})+\sum\limits_{i=1}^{n}\gamma_{i,1}x_{i}}
+= \dfrac{\sum\limits_{i=1}^{n}\gamma_{i,1}(1-x_{i})}{\sum\limits_{i=1}^{n}\gamma_{i,1}}$$
+\subsubsection*{2. 推导高斯混合模型的 EM 算法中 M 步的参数更新公式}
+\par 不难写出，高斯混合模型X的边缘分布为：
+$$P(x) = \sum\limits_{z} P(x,z) = \sum\limits_{z} P(x\ | \ z)·P(z) = \sum\limits_{k=1}^{K}
+\alpha_{k} P(x \ | \ \mu_{k}, \epsilon_{k}) $$
+\par 其中$\epsilon_{k}$代表第k个高斯的协方差矩阵，$\mu_{k}$代表第k个高斯的均值，$\alpha_{k}$
+代表样本x由第k个高斯生成的概率。
+\par 记模型的参数为$\theta=\{\alpha_{k},\mu_{k},\epsilon_{k} \}_{k=1}^{K}$，那么参数的极大似然
+函数可写作：$$L(\theta \ | \ x) = \prod\limits_{i=1}^{n} P(x_{i}\ | \ \theta) $$
+\par 对数似然函数可写作：
+$$LL(\theta \ | \ x) = \sum\limits_{i=1}^{n} \log \ \sum\limits_{k=1}^{K} \alpha_{k}P(x \ | \ \mu_{k}, \epsilon_{k}) $$
+\subsubsection*{E步：}
+\par 与1中同理，我们可以引入一个隐变量$z_{i}$的分布$Q(z_{i})$，通过推导能够得到EM算法的E步得到的
+$Q(z_{i})$为其后验分布：
+$$Q(z_{i})= P(z_{i}=k\ | x_{i})=\dfrac{P(x_{i}\ | z_{i}=k)·P(z_{i}=k)}{P(x_{i})}
+=\dfrac{\alpha_{k} P(x_{i} \ | \ \mu_{k}, \epsilon_{k})}{\sum\limits_{k=1}^{K}\alpha_{k} P(x_{i} \ | \ \mu_{k}, \epsilon_{k}) }$$
+\par 将$Q(z_{i})$记作$\gamma_{i,k}$，在M中为一常数。
+\subsubsection*{M步：}
+\begin{equation}
+    \begin{split}
+        \theta^{+} 
+        &=\arg\max\limits_{\theta}  \sum\limits_{i=1}^{n} \sum\limits_{k=1}^{K} Q(z_{i})\log \dfrac{\alpha_{k} P(x_{i} \ | \ \mu_{k}, \epsilon_{k})}{Q(z_{i})} \\
+        &=\arg\max\limits_{\theta}  \sum\limits_{i=1}^{n} \sum\limits_{k=1}^{K} \gamma_{i,k} \log \alpha_{k} P(x_{i} \ | \ \mu_{k}, \epsilon_{k}) \\
+        &=\arg\max\limits_{\theta}  \sum\limits_{i=1}^{n} \sum\limits_{k=1}^{K} \gamma_{i,k} \biggl(\log P(x_{i} \ | \ \mu_{k}, \epsilon_{k}) + \log \alpha_{k} \biggr)
+        \\ &=\arg\max\limits_{\theta}  \sum\limits_{i=1}^{n} \sum\limits_{k=1}^{K} \gamma_{i,k} \biggl( -\dfrac{1}{2}\log |\epsilon_{k}|-\dfrac{1}{2} (x_{i}-\mu_{k})^{T}\epsilon_{k}^{-1}(x_{i}-\mu_{k}) + \log \alpha_{k}       \biggr)
+        \\ &=\arg\min\limits_{\theta}  \sum\limits_{i=1}^{n} \sum\limits_{k=1}^{K} \gamma_{i,k} \biggl( \dfrac{1}{2}\log |\epsilon_{k}|+\dfrac{1}{2} (x_{i}-\mu_{k})^{T}\epsilon_{k}^{-1}(x_{i}-\mu_{k}) - \log \alpha_{k}       \biggr)
+        \\ &=G(\alpha_{k},\mu_{k},\epsilon_{k})
+        \nonumber
+    \end{split}
+\end{equation}
+1. 令$  \dfrac{\partial G(\alpha_{k},\mu_{k},\epsilon_{k})}{\partial \mu_{k}} 
+=\sum\limits_{i}^{n} \gamma_{i,k} \biggl( -(x_{i}-\mu_{k})^{T}\epsilon_{k}^{-1} \biggr) = 0   $，且$\epsilon_{k}^{-1} \not = \bf{O}$，因此有：
+$$\sum\limits_{i}^{n} \gamma_{i,k} \biggl( -(x_{i}-\mu_{k})^{T} \biggr) = 0  \Longleftrightarrow 
+\sum\limits_{i}^{n} \gamma_{i,k}\ x_{i} = \sum\limits_{i}^{n} \gamma_{i,k}\ \mu_{k}$$
+\par 所以有：$\mu_{k} = \dfrac{\sum\limits_{i}^{n} (\gamma_{i,k}\ x_{i})}{\sum\limits_{i}^{n} \gamma_{i,k}} $ 
+\\2. 令$  \dfrac{\partial G(\alpha_{k},\mu_{k},\epsilon_{k})}{\partial \epsilon_{k}} 
+=\sum\limits_{i=1}^{n} \gamma_{i,k} \biggl( \dfrac{1}{2|\epsilon_{k}|}|\epsilon_{k}|\epsilon_{k}^{-1} - \dfrac{1}{2}(x_{i}-\mu_{k})(x_{i}-\mu_{k})^{T}\epsilon_{k}^{-1}I\epsilon_{k}^{-1} \biggr) = 0 $，有：
+$$\sum\limits_{i=1}^{n} \gamma_{i,k}\ \epsilon_{k}^{-1}\epsilon_{k}\epsilon_{k} = \sum\limits_{i=1}^{n} \gamma_{i,k} (x_{i}-\mu_{k})(x_{i}-\mu_{k})^{T}\epsilon_{k}^{-1}I\epsilon_{k}^{-1}\epsilon_{k}\epsilon_{k} $$
+\par 化简后得：
+$$\sum\limits_{i=1}^{n} \gamma_{i,k}\ \epsilon_{k} = \sum\limits_{i=1}^{n} \gamma_{i,k}\ (x_{i}-\mu_{k})(x_{i}-\mu_{k})^{T}
+\Longleftrightarrow \epsilon_{k} = \dfrac{\sum\limits_{i=1}^{n} \gamma_{i,k}\ (x_{i}-\mu_{k})(x_{i}-\mu_{k})^{T}}{\sum\limits_{i=1}^{n} \gamma_{i,k}}$$
+\\3. 在对$\alpha_{k}$进行求导时不能直接进行，因为这里有一个隐形的约束条件：
+$$\sum\limits_{k=1}^{K} \alpha_{k}=1 $$
+\par 这个问题相当于求一个有约束的优化问题，因此将其转换成拉格朗日函数的形式：
+$$L(\alpha,\lambda) = \sum\limits_{i=1}^{n}\sum\limits_{k=1}^{K} \gamma_{i,k} \log \alpha_{k} + \lambda(\sum\limits_{k=1}^{K} \alpha_{k} -1) $$
+\par 求导后令其为0，得：
+$$\sum\limits_{i=1}^{n} \gamma_{i,k} \dfrac{1}{\alpha_{k}} + \lambda = 0
+\quad , \quad \sum\limits_{i=1}^{n} \gamma_{i,k}= -\lambda \alpha_{k}$$
+\par 对每一个$\alpha_{k}$，上式成立，因此有：
+$$\sum\limits_{k=1}^{K}\sum\limits_{i=1}^{n} \gamma_{i,k} =- \sum\limits_{k=1}^{K} \lambda \alpha_{k} = -\lambda = \sum\limits_{i=1}^{n} \gamma_{i,k} \dfrac{1}{\alpha_{k}}$$
+\par 这里的$\gamma_{i,k}$实际上式关于隐变量z的后验分布，因此有：
+$$ \sum\limits_{k=1}^{K} \gamma_{i,k} = 1 \longrightarrow \sum\limits_{i=1}^{n}\sum\limits_{k=1}^{K} \gamma_{i,k} = N$$
+\par 最终得到$\alpha_{k}$的更新公式为：
+$$\alpha_{k} = \dfrac{\sum\limits_{i=1}^{n} \gamma_{i,k}}{N} $$
+\par 综上所述，M步的迭代更新公式为：
+$$\mu_{k} = \dfrac{\sum\limits_{i}^{n} (\gamma_{i,k}\ x_{i})}{\sum\limits_{i}^{n} \gamma_{i,k}}
+\ , \ \epsilon_{k}= \dfrac{\sum\limits_{i=1}^{n} \gamma_{i,k}\ (x_{i}-\mu_{k})(x_{i}-\mu_{k})^{T}}{\sum\limits_{i=1}^{n} \gamma_{i,k}}
+\ , \  \alpha_{k} = \dfrac{\sum\limits_{i=1}^{n}\gamma_{i,k}}{N} $$
+
+\end{spacing}
+\end{document}

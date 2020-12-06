@@ -1,0 +1,117 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{mathtools}
+\usepackage{amsmath,amssymb}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{bm}
+\geometry{left=3.0cm,right=3.0cm,top=2.0cm,bottom=2.0cm}
+
+\title{机器学习第四次作业}
+\author{大数据81 吴志超 2183311147}
+\begin{document}
+\begin{spacing}{1.3}
+\section*{10.22作业}
+\subsection*{1. 写出以下线性规划问题的对偶问题：}
+\begin{equation}
+    \begin{split}
+        \bf{\min_{x\in \mathbb{R}^{n}}} \ & c^{T}x \\
+        \bf{s.t.} \ &\overline{A}x-b \le 0 \\
+        &Ax-b=0 \nonumber
+    \end{split}
+\end{equation}
+\\
+\subsubsection*{解：}
+\par 由原问题可知，其拉格朗日函数为：
+$$L(x,\lambda,\nu) = c^{T}x+\lambda(\overline{A}x-\overline{b})+\nu(Ax-b)) $$
+\par 其对偶函数可写作：
+\begin{equation}
+    \begin{split}
+        g(\lambda,\nu) 
+        &= \inf_{x\in \mathbb{R}^{n}}(L(x,\lambda,\nu)) \\
+        &= \inf_{x\in \mathbb{R}^{n}}(c^{T}x+\lambda^{T}(\overline{A}x-\overline{b})+\nu^{T}(Ax-b))) \\
+        &= \inf_{x\in \mathbb{R}^{n}}((c^{T}+\lambda^{T}\overline{A} +\nu^{T}A)x - \lambda^{T}\overline{b}-\nu^{T}b)  \nonumber
+    \end{split}
+\end{equation}
+\par 解得拉格朗日对偶函数为：
+    \[ g(\lambda,\nu) = \left\{\begin{array}{ll}
+        -\lambda^{T}\overline{b}-\nu^{T}b  &, \ c^{T}+\lambda^{T}\overline{A}+\nu^{T}A = 0 \\
+        - \infty &,\ otherwise
+    \end{array}\right.\]
+\par 因此，原问题的对偶问题可写作：
+\begin{equation}
+    \begin{split}
+        \bf{\max_{\lambda,\nu}} &\quad -\lambda^{T}\overline{b}-\nu^{T}b \\
+        \bf{s.t.} &\quad c^{T}+\lambda^{T}\overline{A}+\nu^{T}A = 0 \\
+        &\quad  \lambda^{T} \succeq 0 \nonumber
+    \end{split}
+\end{equation}
+
+\subsection*{2. 软间隔可以写作如下形式：}
+\begin{equation}
+    \begin{split}
+        \min_{\bf{w},b,\xi} &\quad \dfrac{1}{2}||\bf{w}||^{2} + C\sum\limits_{i=1}^{m} \xi_{i}^{2} \\
+        \bf{s.t.} &\quad y_{i}(\bf{w^{T}x_{i}}+b) \ge 1-\xi_{i} , \quad i = 1,\dots,m. \nonumber
+    \end{split}
+\end{equation}
+\\
+试求其对偶形式，并写出其KKT条件，并根据KKT条件讨论训练样本的分布情况。
+\\
+\subsubsection*{解：}
+\par \noindent 1. 不难写出其拉格朗日函数为：
+\begin{equation}
+    \begin{split}
+        L(\bf{w},b,\bf{\alpha},\bf{\xi}) = \dfrac{1}{2} ||\bf{w}||^{2} &+ C\sum \limits_{i=1}^{m} \xi_{i}^{2} \\
+        &+ \sum\limits_{i=1}^{m} \alpha_{i}(1-\xi_{i}-y_{i}(\bf{w_{i}}^T\bf{x_{i}}+b)) \nonumber
+    \end{split}
+\end{equation}
+\par 其中，$\alpha_{i} \ge 0$是拉格朗日乘子.
+\par 令$L(\bf{w},b,\bf{\alpha},\bf{\xi})$对$\bf{w},b,\bf{\xi_{i}}$求导为零可得：
+\begin{equation}
+    \begin{split}
+        \bf{w} &= \sum\limits_{i=1}^{m}\alpha_{i}y_{i}\bf{x_{i}} \\
+        0 &= \sum\limits_{i=1}^{m} \alpha_{i}y_{i}     \\
+        0 &= 2C\xi_{i}-\alpha_{i} \nonumber
+    \end{split}
+\end{equation}
+\par 代入上述表达式，可得原拉格朗日对偶函数为：
+$$\sum\limits_{i=1}^{m}\alpha_{i} - 
+\dfrac{1}{2}\sum\limits_{i=1}^{m}\sum\limits_{j=1}^{m}\alpha_{i}\alpha_{j}y_{i}y_{j}\bf{x_{i}^{T}x_{j}}
+-\dfrac{1}{4C}\sum\limits_{i=1}^{m}  \alpha_{i}^{2}
+$$
+\par 因此，原问题的对偶问题可写作：
+\begin{equation}
+    \begin{split}
+        \bf{\max_{\alpha}} &\quad \sum\limits_{i=1}^{m}\alpha_{i} - 
+        \dfrac{1}{2}\sum\limits_{i=1}^{m}\sum\limits_{j=1}^{m}\alpha_{i}\alpha_{j}y_{i}y_{j}\bf{x_{i}^{T}x_{j}}
+        -\dfrac{1}{4C}\sum\limits_{i=1}^{m}  \alpha_{i}^{2} \\
+        \bf{s.t.} &\quad \sum\limits_{i=1}^{m} \alpha_{i}y_{i} = 0 \ , \\
+        & \quad \alpha_{i} \ge 0 \ , \quad i=1,2,\dots,m . \nonumber
+    \end{split}
+\end{equation}
+\par 不难发现，$\xi_{i}$的符号取决于C，又$C>0$，因此有:$$\xi_{i} \ge 0$$
+\par \noindent 2. 其KKT条件可写为：
+    \begin{spacing}{1.5}
+        \[\left\{\begin{array}{ll}
+            &\alpha_{i} \ge 0   \quad , i=1,\dots , m     \\
+            & -(1-\xi_{i}-y_{i}f(x_{i})) \ge 0   \quad , i=1,\dots , m \\
+            &\alpha_{i}(1-\xi_{i}-y_{i}f(x_{i})) = 0  \quad , i=1,\dots , m\\
+            &\bf{w}= \sum\limits_{i=1}^{m}\alpha_{i}y_{i}\bf{x_{i}} \\
+            &\sum\limits_{i=1}^{m} \alpha_{i}y_{i} =0    \\
+            & 2C\xi_{i}=\alpha_{i} \quad , i=1,\dots , m
+        \end{array}\right. \]
+    \end{spacing}
+
+\par \noindent 3. 训练样本分布情况如下：
+\par \noindent \textbf{(1) 当$\alpha_{i} > 0$时，}
+$$\xi_{i} =\dfrac{\alpha_{i}}{2C}> 0$$
+$$(1-\xi_{i}-y_{i}f(x_{i})) =0$$
+\par 此时，若$ 0<\xi_{i} \le 1$(即：$0 < \alpha_{i} \le 2C$)时，$y_{i}f(x_{i})$落在最大间隔内部，距离直线$\bf{w^{T}x}+b=1 $的距离为$\xi_{i}$个单位；
+\par 若$\xi_{i}>1$，样本即被错误分类。\\
+\par \noindent \textbf{(2) 当$\alpha_{i} = 0$时，}
+$$\xi_{i} =\dfrac{\alpha_{i}}{2C}=0  $$
+$$(1-\xi_{i}-y_{i}f(x_{i}))=(1-y_{i}f(x_{i})) \le 0$$
+\par 此时的样本权值为0，对训练结果没有影响。$y_{i}f(x_{i})$可能落在$\bf{w^{T}x}+b=1$其上，
+也可能落在其外部。
+\end{spacing}
+\end{document}
