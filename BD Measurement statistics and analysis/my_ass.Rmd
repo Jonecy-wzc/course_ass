@@ -1,0 +1,393 @@
+---
+title: "Assignment of Chapter 2"
+author: "Zhichao Wu"
+date: "2020/12/6"
+geometry: "left=2.5cm,right=2cm,top=3cm,bottom=2.5cm"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: yes
+    number_sections: yes
+    toc: true
+  pdf_document:
+    latex_engine: xelatex
+    fig_caption: yes
+    number_sections: yes
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Data Introduction
+This data is from [Kaggle](https://www.kaggle.com/victorbonilla/beijing-multisite-airquality-data-data-set). This data set includes hourly air pollutants data from ***Tiantan*** nationally-controlled air-quality monitoring sites. The air-quality data are from the Beijing Municipal Environmental Monitoring Center. The meteorological data in each air-quality site are matched with the nearest weather station from the China Meteorological Administration. The time period is from March 1st, 2013 to February 28th, 2017. Missing data are denoted as NA.
+
+## Source
+***@ Web page in UCI Machine Learning Repository***
+
+## Abstract
+This hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing. \
+Here is the abstract of the data set: \
+
+- **Data Set Characteristics:** Multivariate, Time-Series
+- **Number of Instances:** 420768
+- **Area:** Physical
+- **Attribute Characteristics:** Integer, Real
+- **Number of Attributes:** 18
+- **Date Donated:** 2019-09-20
+- **Associated Tasks:** Regression
+
+# Data Exploratory Analysis 
+***Language: R*** \
+***coding: utf-8***
+
+## Import Library
+```{r, echo=TRUE}
+library(ggplot2)
+library(plyr)
+library(utils)
+```
+## Import Data Set
+```{r, echo=TRUE}
+data = read.csv('data_tiantan.csv')
+names(data)
+```
+**The data set has 18 attributes, but we only use 1st to 14th attributes, so we need to split it:**
+```{r, echo=TRUE}
+use_data = data[,c(1:14)]
+names(use_data)
+```
+
+**Show the detailed information of this data set:**
+```{r, echo=TRUE}
+summary(use_data)
+```
+
+## Choose one attribute
+**Here we choose "PM2.5" as the variable for our exploring research, because it is numerical value and easy to operate and observe. **
+```{r, echo=TRUE}
+data0 = na.omit(use_data[,'PM2.5'])                       # Delete the records with missed value.
+N = length(data0)                                         # The length of variable.
+data1 = cut(data0, breaks = c(0, (1:15)*50, max(data0)))  # Grouping variable.
+```
+
+## Observe the group information
+### Group tentatively
+```{r echo=TRUE}
+data1 = data.frame(data1)                                   # Convert data into dataframe
+dataf = ddply(data1, "data1", summarise, n = length(data1)) # Statistical grouping information
+dataf$组号 = c(1:length(dataf[,1]))                           # Add group code
+ggplot(dataf, aes(x = 组号, y = n)) + geom_bar(stat = "identity", fill = 'red') + 
+  geom_text(aes(label = n), color = "black", vjust = -0.3) + 
+  labs(title = "Exponent of PM2.5") + xlab('Group Code') + ylab('Counts')
+```
+
+**We find the distribution is strongly skewed, so we need to adjust the group gap to make it normal.**
+
+### Adjust the group gap
+```{r, echo=TRUE}
+data2 = cut(data0, breaks = c(0,10,25,(1:5)*50, max(data0)))
+data2 = data.frame(data2)
+dataf2 = ddply(data2, "data2", summarise, n = length(data2))
+dataf2$组号 = c(1:length(dataf2[,1]))
+ggplot(dataf2, aes(x = 组号, y = n)) + geom_bar(stat = "identity", fill = 'red') + 
+  geom_text(aes(label = n), color = "black", vjust = -0.3) + 
+  labs(title = "Exponent of PM2.5") + xlab('Group Code') + ylab('Counts')
+```
+
+**Now this distribution looks great!**
+
+## Caculate frequency
+```{r, echo=TRUE}
+PD = table(data2)/N
+PD
+```
+## Sample tentatively
+**In order to make sure the code(especially the function we write) we used could run without bugs, we can sample tentatively before starting.**
+
+### Sampling function
+```{r, echo=TRUE}
+func1 = function(i){
+  set.seed(1)
+  p = sample(data0, i)
+  p = c(p, matrix(NA, 1, max(samp) - length(p)))
+  return (p)
+}
+```
+
+### Function calculating the sample quality
+```{r, echo=TRUE}
+func2 = function(datasamp){
+  datasamp_1 = cut(na.omit(datasamp), breaks = c(0,10,25,(1:5)*50,max(data0)))
+  PS = table(datasamp_1)/length(na.omit(datasamp)) + 0.0000001
+  J = sum((PS-PD) * log(PS/PD))
+  q = exp(-J)
+  return(q)
+}
+```
+
+### Show the result
+```{r, echo=TRUE}
+samp = c(100,1000,5000,10000)
+n = length(samp)
+samp = as.matrix(samp)   # Function apply require the type of data should be "matrix"
+ma = apply(samp, 1, func1)
+```
+
+```{r, echo=TRUE}
+Q1 = apply(ma, 2, func2)
+Q1
+```
+
+## Select the optimal sample
+### Calculate the quality of different sample size
+```{r, echo=TRUE}
+x = seq(6,15,by = 0.1)
+y = 2^(x)
+plot(x, y, ylab = "Sample size", xlab = "Variable X", main = "Choose the sample size", 
+     col = "blue" )
+head(y, 20)
+samp = round(y)[-c(1:10)]                 # The first 10 sample size chages too slowly
+n = length(samp)
+samp = as.matrix(samp)
+```
+
+```{r, echo=TRUE}
+ma2 = apply(samp, 1, func1)
+```
+
+```{r, echo=TRUE}
+Q2 = apply(ma2, 2, func2) 
+Q2
+plot(samp, Q2, xlab = 'sample size', ylab = 'sample quality', 
+     main = 'Select the optimal sample size',col = 'blue')
+```
+
+### Plot the figure
+```{r, echo=TRUE}
+df_input = data.frame(samp, Q2)
+ggplot(df_input, aes(x = samp, y = Q2)) + geom_point(size = 3) + 
+  geom_hline(yintercept = 0.99, color = 'red') + 
+  annotate("text", x = 20000, y = 0.993, label = "sample_quality = 0.99", 
+           fontface = "italic", color = 'blue') +
+  annotate("segment", x = 20000, xend = 15000, y = 0.992, yend = 0.990, 
+           arrow = arrow(), color= 'blue', size = 1)
+```
+
+### Print the result
+```{r, echo=TRUE}
+which(df_input$Q2 > 0.99)
+df_input[29,1]
+```
+***It is clear that, the quality promotes slowly when it comes to 0.99, so we only need choose the minimum sample size (891).***
+
+# Other codes that I tried
+**Apart from the assignment, I also tried the other code in our course book.**
+```{r, echo=TRUE, warning=FALSE}
+# 3.2
+train_data = read.csv('train.csv', header = TRUE, fileEncoding = 'UTF-8')
+# Generate equidistant points -- Vector
+x = seq(6,20,by = 0.1) 
+y = 2^(x)
+plot(x,y)
+# Rounded
+samp = round(y)
+# elete data in 1：51,69：90
+samp = samp[-c(1:51)][-c(69:90)]
+n = length(samp)
+
+n1 = length(train_data[,1])
+data0 = na.omit(train_data[,'Age'])
+N = length(data0)
+# Attribute Age - 177 data missing
+missing_count_age = n1 - N 
+rate1 = N/n1 ; rate2 = missing_count_age/n1
+pie(c(missing_count_age,N),labels = c('missed\n177 (19.9%)','non_missed \n714 (80.1%)'),
+    col = rainbow(2, alpha = 0.2))+
+  title(main = 'The missing value proportion diagram')
+
+# data1 -> Delimit each variable into its corresponding interval and return 
+#                                        the region to which it belongs
+data1 = cut(data0, breaks = c(0, (1:7)*10, max(data0)))
+View(data1)
+# table function used to count
+PD = table(data1)/N # calculate frequency
+View(PD)
+
+hist1 = hist(data0, breaks = 10, xlab = 'Age', ylab = 'counts', col = rainbow(8, alpha = 0.4),
+             main = 'TitanicAge distribution histogram')
+
+# rep -- > repeat
+Q = rep(0,n)
+View(Q)
+J = NULL
+
+## Simple random sampling
+
+set.seed(1)
+# There are only 714 pieces of data, so you can't do anything in the book
+# Rewrite the samp
+samp = c(1:7)*100
+samp = as.matrix(samp)
+n = length(samp)
+
+func1 = function(count){
+  p = sample(data0, count)
+  p = c(p, matrix(NA, 1 ,samp[n] - length(p)))
+  return (p)
+}
+
+# apply -> Samp is mapped into the variables through Func1, 
+#   with the second variable 1 being mapped by rows and 2 by columns
+ma = apply(samp, 1, func1)
+
+func2 = function(data_sample){
+  # Minus NA -> data_sample_1
+  data_sample_1 = cut(na.omit(data_sample), breaks = c(0, (1:7)*10, max(data0))) 
+  # Notice that the data0 here means the population distribution
+  PS = table(data_sample_1)/length(na.omit(data_sample)) + 0.0000000001
+  J = sum( (PS-PD) * (log(PS/PD)) )
+  q = exp(-J)
+  return (q)
+}
+# Output data quality values
+Q1 = apply(ma, 2, func2)
+
+barplot(Q1, names.arg = c(1:7)*100, col = rainbow(7, alpha = 0.4), 
+        xlab = 'Sample size', ylab='Sample quality', ylim = c(0,1)) +
+  title('Sample quality change')
+
+## Stratified sampling
+
+str = length(levels(data1))
+View(data1)
+# Merge column vectors. Note that when you merge, data1 columns 
+#   no longer hold intervals, but indexes of intervals
+data2 = cbind(data0, data1)
+
+func3 = function(s){
+  p = NULL
+  for(j in 1:str){
+    samp2 = NULL
+    samp2 = sample( (1:N)[data2[,2] == j], round(s*PD[j]) )  
+    #(1:N)[data2[,2] == j] Equivalent to return index
+    p = c(p, samp2)
+  }
+  res = c(data0[p], matrix(NA, 1, samp[n] + 5 - length(p)) )
+  # Why？ + 5 - len（p）
+  # Explanation：round -> When taking an integer may abandon 0.4, 
+  #   so need to do a +5 processing, to prevent the occurrence of negative numbers!!
+  print(length(p))
+  return(res)
+}
+
+mb = apply(samp, 1, func3)
+Q2 = apply(mb, 2, func2)
+
+barplot(Q2, names.arg = c(1:7)*100, col = rainbow(7, alpha = 0.4), 
+        xlab = 'Sample size', ylab='Sample quality', ylim = c(0,1)) +
+  title('Sample quality change')
+```
+
+```{r, echo=TRUE, warning=FALSE}
+# 3.3  Probability sampling
+
+# clear work space
+rm(list = ls())
+library(sampling)
+
+# Simple random sampling
+data = read.csv('train.csv', header = TRUE)
+names(data)
+# Missing value information
+nap = which(is.na(data), arr.ind = TRUE)
+miss = nap[,1]
+# Deletes rows with missing data
+data11 = data
+data12 = data11[-miss,]
+
+# The total number
+N = dim(data)[1]
+# Select the number of samples
+n = 500
+# srswor：never put it back ； srswr：always put it back
+srsp = srswor(n, N)  # Pay Attention：return index
+srs = getdata(data, srsp)
+#View(srs)
+
+length(srs[,1])
+meanY = colMeans(data[,c(6,10)])
+meany = colMeans(srs[,c(7,11)])    
+#A column of serial numbers is automatically generated, corresponding to 
+#   the index in the original sample
+error = meanY - meany
+
+# Stratified sampling
+data$Pclass = factor(data$Pclass, levels = as.character(1:3)) 
+  #Convert to the Factor class
+weights = n * table(data$Pclass)/N
+order = order(data$Pclass)
+srp = strata(data = data[order,], stratanames = "Pclass", 
+             size = weights, method = "srswor")
+sr = getdata(data, srp)
+
+# Cluster sampling
+scp = cluster(data = data, clustername = "SibSp", size = 4, method = 'srswor',
+              description = FALSE)
+sc = getdata(data, scp)                
+
+# Systematic sampling
+i = rep(1, N) 
+pik1 = inclusionprobabilities(i, n) # Take n samples with equal probability       
+# View(pik1)
+ssp = UPsystematic(pik1, eps = 1e-6)  #eps control the range of pik1 in (eps,1-eps)
+ss = getdata(data, ssp)
+
+# Multistage sampling
+msp = mstage(data = data, stage = c("cluster","cluster"), 
+             varnames = list("SibSp","Pclass"), 
+             size = list(4,1), method = c("srswor","srswor"),description = FALSE)
+ms = getdata(data,msp)                
+mss = ms[[2]]                
+
+# Unequal probability sampling
+# The inclusion probability is calculated based on the size of Fare
+Fare = data$Fare
+# View(Fare)
+#Avoid the appearance of zero 0
+Fare = Fare + 1
+pik2 = inclusionprobabilities(Fare, n)
+usp = UPmidzuno(pik2)
+us = getdata(data, usp)
+
+# Double sampling
+# Two simple random sampling here
+## first sampling
+srsp1 = srswor(700, N)
+srs1 = getdata(data, srsp1)
+## second sampling
+srsp2 = srswor(n, 700)
+srs2 = getdata(srs1, srsp2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
